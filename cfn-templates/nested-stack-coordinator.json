@@ -1,0 +1,107 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Master template that creates VPC and ECS stacks for ECS Managed Instances using nested stacks",
+  "Parameters": {
+    "VpcStackTemplateUrl": {
+      "Type": "String",
+      "Description": "S3 URL for the VPC stack template",
+      "Default": "https://your-bucket.s3.amazonaws.com/vpc-stack.json"
+    },
+    "EcsStackTemplateUrl": {
+      "Type": "String",
+      "Description": "S3 URL for the ECS stack template",
+      "Default": "https://your-bucket.s3.amazonaws.com/ecs-stack.json"
+    }
+  },
+  "Resources": {
+    "VpcStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "VpcStackTemplateUrl"
+        },
+        "Tags": [
+          {
+            "Key": "StackType",
+            "Value": "VPC"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "EcsStack": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "EcsStackTemplateUrl"
+        },
+        "Parameters": {
+          "VpcId": {
+            "Fn::GetAtt": [
+              "VpcStack",
+              "Outputs.VpcId"
+            ]
+          },
+          "PrivateSubnet1Id": {
+            "Fn::GetAtt": [
+              "VpcStack",
+              "Outputs.PrivateSubnet1Id"
+            ]
+          },
+          "PrivateSubnet2Id": {
+            "Fn::GetAtt": [
+              "VpcStack",
+              "Outputs.PrivateSubnet2Id"
+            ]
+          }
+        },
+        "Tags": [
+          {
+            "Key": "StackType",
+            "Value": "ECS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DependsOn": "VpcStack"
+    }
+  },
+  "Outputs": {
+    "VpcStackId": {
+      "Description": "VPC Stack ID",
+      "Value": {
+        "Ref": "VpcStack"
+      }
+    },
+    "EcsStackId": {
+      "Description": "ECS Stack ID",
+      "Value": {
+        "Ref": "EcsStack"
+      }
+    },
+    "VpcId": {
+      "Description": "VPC ID from nested stack",
+      "Value": {
+        "Fn::GetAtt": [
+          "VpcStack",
+          "Outputs.VpcId"
+        ]
+      }
+    },
+    "EcsClusterId": {
+      "Description": "ECS Cluster ID from nested stack",
+      "Value": {
+        "Fn::GetAtt": [
+          "EcsStack",
+          "Outputs.ManagedInstancesClusterDC139296"
+        ]
+      }
+    }
+  }
+}

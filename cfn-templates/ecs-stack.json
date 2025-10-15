@@ -1,0 +1,417 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "ECS Resources Stack",
+  "Parameters": {
+    "VpcId": {
+      "Type": "String",
+      "Description": "VPC ID from the VPC stack"
+    },
+    "PrivateSubnet1Id": {
+      "Type": "String",
+      "Description": "Private Subnet 1 ID from the VPC stack"
+    },
+    "PrivateSubnet2Id": {
+      "Type": "String",
+      "Description": "Private Subnet 2 ID from the VPC stack"
+    }
+  },
+  "Resources": {
+    "ManagedInstancesClusterDC139296": {
+      "Type": "AWS::ECS::Cluster"
+    },
+    "ManagedInstancesClusterDA186AC9": {
+      "Type": "AWS::ECS::ClusterCapacityProviderAssociations",
+      "Properties": {
+        "Cluster": {
+          "Ref": "ManagedInstancesClusterDC139296"
+        },
+        "CapacityProviders": [
+          "FARGATE",
+        ],
+        "DefaultCapacityProviderStrategy": [
+          {
+            "CapacityProvider": {
+              "Ref": "ManagedInstancesCP"
+            },
+            "Weight": 1
+          }
+        ]
+      }
+    },
+    "InfrastructureRoleB0C76DC8": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/AmazonECSInfrastructureRolePolicyForManagedInstances"
+              ]
+            ]
+          }
+        ],
+        "RoleName": "ecsInfrastructureRoleForManagedInstances"
+      }
+    },
+    "InstanceRole3CCE2F1D": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/AmazonECSInstanceRolePolicyForManagedInstances"
+              ]
+            ]
+          }
+        ],
+        "RoleName": "ecsInstanceRoleForManagedInstances"
+      }
+    },
+    "InstanceProfile9F2F41CB": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "InstanceProfileName": "ecsInstanceRoleForManagedInstances",
+        "Roles": [
+          {
+            "Ref": "InstanceRole3CCE2F1D"
+          }
+        ]
+      }
+    },
+    "ManagedInstancesSecurityGroupC479A9F6": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ManagedInstances capacity provider instances",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      }
+    },
+    "ManagedInstancesCP": {
+      "Type": "AWS::ECS::CapacityProvider",
+      "Properties": {
+        "Name" : "ManagedInstancesCP",
+        "ClusterName": {
+          "Ref": "ManagedInstancesClusterDC139296"
+        },
+        "ManagedInstancesProvider": {
+          "InfrastructureRoleArn": {
+            "Fn::GetAtt": [
+              "InfrastructureRoleB0C76DC8",
+              "Arn"
+            ]
+          },
+          "InstanceLaunchTemplate": {
+            "Ec2InstanceProfileArn": {
+              "Fn::GetAtt": [
+                "InstanceProfile9F2F41CB",
+                "Arn"
+              ]
+            },
+            "NetworkConfiguration": {
+              "SecurityGroups": [
+                {
+                  "Fn::GetAtt": [
+                    "ManagedInstancesSecurityGroupC479A9F6",
+                    "GroupId"
+                  ]
+                }
+              ],
+              "Subnets": [
+                {
+                  "Ref": "PrivateSubnet1Id"
+                },
+                {
+                  "Ref": "PrivateSubnet2Id"
+                }
+              ]
+            }
+          },
+          "PropagateTags": "CAPACITY_PROVIDER"
+        }
+      }
+    },
+    "TaskDefTaskRole1EDB4A67": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      }
+    },
+    "TaskDef54694570": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/httpd:2.4",
+            "Name": "web1",
+            "PortMappings": [
+              {
+                "ContainerPort": 80,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ],
+        "Cpu": "1024",
+        "Family": "managedinstancescapacityproviderTaskDef1",
+        "Memory": "9500",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "MANAGED_INSTANCES"
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "TaskDefTaskRole1EDB4A67",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "TaskDef2": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Essential": true,
+            "Image": "public.ecr.aws/docker/library/nginx:latest",
+            "Name": "web2",
+            "PortMappings": [
+              {
+                "ContainerPort": 80,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ],
+        "Cpu": "1024",
+        "Family": "managedinstancescapacityproviderTaskDef2",
+        "Memory": "5500",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "MANAGED_INSTANCES"
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "TaskDefTaskRole1EDB4A67",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "ManagedInstancesServiceDFC92B6D": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "ManagedInstancesService1",
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": {
+              "Ref": "ManagedInstancesCP"
+            },
+            "Weight": 1
+          }
+        ],
+        "Cluster": {
+          "Ref": "ManagedInstancesClusterDC139296"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50
+        },
+        "DesiredCount": 2,
+        "EnableECSManagedTags": false,
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ManagedInstancesServiceSecurityGroupF72D809E",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnet1Id"
+              },
+              {
+                "Ref": "PrivateSubnet2Id"
+              }
+            ]
+          }
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef54694570"
+        }
+      },
+      "DependsOn": [
+        "TaskDefTaskRole1EDB4A67"
+      ]
+    },
+    "ManagedInstancesService2": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "ManagedInstancesService2",
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": {
+              "Ref": "ManagedInstancesCP"
+            },
+            "Weight": 2
+          }
+        ],
+        "Cluster": {
+          "Ref": "ManagedInstancesClusterDC139296"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50
+        },
+        "DesiredCount": 2,
+        "EnableECSManagedTags": false,
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ManagedInstancesServiceSecurityGroupF72D809E",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Ref": "PrivateSubnet1Id"
+              },
+              {
+                "Ref": "PrivateSubnet2Id"
+              }
+            ]
+          }
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef2"
+        }
+      },
+      "DependsOn": [
+        "TaskDefTaskRole1EDB4A67",
+        "ManagedInstancesServiceDFC92B6D"
+      ]
+    },
+    "ManagedInstancesServiceSecurityGroupF72D809E": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "managedinstances-capacity-provider/ManagedInstancesService/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      },
+      "DependsOn": [
+        "TaskDefTaskRole1EDB4A67"
+      ]
+    }
+  },
+  "Outputs": {
+    "ManagedInstancesClusterDC139296": {
+      "Description": "ECS Cluster ID",
+      "Value": {
+        "Ref": "ManagedInstancesClusterDC139296"
+      }
+    },
+    "EcsClusterArn": {
+      "Description": "ECS Cluster ARN",
+      "Value": {
+        "Fn::GetAtt": [
+          "ManagedInstancesClusterDC139296",
+          "Arn"
+        ]
+      }
+    },
+    "TaskDef1Arn": {
+      "Description": "Task Definition 1 ARN",
+      "Value": {
+        "Ref": "TaskDef54694570"
+      }
+    },
+    "TaskDef2Arn": {
+      "Description": "Task Definition 2 ARN",
+      "Value": {
+        "Ref": "TaskDef2"
+      }
+    },
+    "EcsService1Arn": {
+      "Description": "ECS Service 1 ARN",
+      "Value": {
+        "Ref": "ManagedInstancesServiceDFC92B6D"
+      }
+    },
+    "EcsService2Arn": {
+      "Description": "ECS Service 2 ARN",
+      "Value": {
+        "Ref": "ManagedInstancesService2"
+      }
+    }
+  }
+}
