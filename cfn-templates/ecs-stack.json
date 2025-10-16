@@ -26,7 +26,7 @@
           "Ref": "ManagedInstancesClusterDC139296"
         },
         "CapacityProviders": [
-          "FARGATE",
+          "FARGATE"
         ],
         "DefaultCapacityProviderStrategy": [
           {
@@ -132,7 +132,7 @@
     "ManagedInstancesCP": {
       "Type": "AWS::ECS::CapacityProvider",
       "Properties": {
-        "Name" : "ManagedInstancesCP",
+        "Name": "ManagedInstancesCP",
         "ClusterName": {
           "Ref": "ManagedInstancesClusterDC139296"
         },
