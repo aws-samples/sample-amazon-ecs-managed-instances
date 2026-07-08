@@ -1,0 +1,67 @@
+{
+    "family": "mi-sheltie",
+    "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/EcsExecRole",
+    "networkMode": "host",
+    "pidMode": "host",
+    "containerDefinitions": [
+        {
+            "name": "bottlerocket-admin",
+            "image": "public.ecr.aws/bottlerocket/bottlerocket-admin:v0.12.2",
+            "versionConsistency": "disabled",
+            "entryPoint": [
+                "sleep"
+            ],
+            "command": [
+                "infinity"
+            ],
+            "linuxParameters": {
+                "initProcessEnabled": true
+            },
+            "privileged": true,
+            "mountPoints": [
+                {
+                    "containerPath": "/.bottlerocket/rootfs",
+                    "sourceVolume": "rootfs"
+                },
+                {
+                    "containerPath": "/host-root",
+                    "sourceVolume": "rootfs"
+                },
+                {
+                    "containerPath": "/run/api.sock",
+                    "sourceVolume": "apisocket"
+                },
+                {
+                    "containerPath": "/usr/bin/apiclient",
+                    "sourceVolume": "apiclient"
+                }
+            ]
+        }
+    ],
+    "requiresCompatibilities": [
+        "MANAGED_INSTANCES"
+    ],
+    "volumes": [
+        {
+            "name": "rootfs",
+            "host": {
+                "sourcePath": "/"
+            }
+        },
+        {
+            "name": "apisocket",
+            "host": {
+                "sourcePath": "/run/api.sock"
+            }
+        },
+        {
+            "name": "apiclient",
+            "host": {
+                "sourcePath": "/bin/apiclient"
+            }
+        }
+    ],
+    "cpu": "1024",
+    "memory": "2048"
+}

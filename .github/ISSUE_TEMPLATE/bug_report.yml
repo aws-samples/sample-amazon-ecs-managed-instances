@@ -1,0 +1,64 @@
+name: Bug report
+description: Report something that isn't working as expected
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please do not use this form to report a security vulnerability — see the [Security policy](https://github.com/aws-samples/sample-amazon-ecs-managed-instances/security/policy) instead.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Which part of the repo does this affect?
+      options:
+        - cfn-templates
+        - patterns
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: pattern-name
+    attributes:
+      label: Pattern name (if applicable)
+      description: If this is about something in `patterns/`, which subdirectory (e.g. `adot`, `dind`, `fluentbit`, `mi-init`, `sheltie`)?
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: A minimal series of steps or commands that reproduce the issue.
+      placeholder: |
+        1. Run `aws cloudformation create-stack ...`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: AWS region, relevant CLI/SDK versions, and any modifications you made to the template/task definition before hitting the issue.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Any error messages, stack traces, or CloudFormation/ECS event output. This will be rendered as a code block, so no need for backticks.
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,8 @@
+{
+    "clusterArn": "arn:aws:ecs:<AWS_REGION>:<AWS_ACCOUNT_ID>:cluster/<CLUSTER_NAME>",
+    "daemonName": "fluentbit",
+    "daemonTaskDefinitionArn": "arn:aws:ecs:<AWS_REGION>:<AWS_ACCOUNT_ID>:daemon-task-definition/daemon-fluentbit",
+    "capacityProviderArns": [
+        "arn:aws:ecs:<AWS_REGION>:<AWS_ACCOUNT_ID>:capacity-provider/<CAPACITY_PROVIDER_NAME>"
+    ]
+}

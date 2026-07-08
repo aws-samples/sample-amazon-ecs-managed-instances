@@ -1,0 +1,32 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "CloudWatchLogs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ],
+            "Resource": "arn:aws:logs:<AWS_REGION>:<AWS_ACCOUNT_ID>:log-group:/ecs/<CLUSTER_NAME>/*"
+        },
+        {
+            "Sid": "S3GetConfig",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::<CONFIG_BUCKET_NAME>/*"
+        },
+        {
+            "Sid": "DescribeContainerInstances",
+            "Effect": "Allow",
+            "Action": [
+                "ecs:DescribeContainerInstances"
+            ],
+            "Resource": "arn:aws:ecs:<AWS_REGION>:<AWS_ACCOUNT_ID>:container-instance/<CLUSTER_NAME>/*"
+        }
+    ]
+}

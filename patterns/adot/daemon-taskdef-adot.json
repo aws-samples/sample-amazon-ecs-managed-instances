@@ -1,0 +1,152 @@
+{
+    "family": "daemon-adot-collector",
+    "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/EcsAdotTaskRole",
+    "containerDefinitions": [
+        {
+            "name": "adot-collector",
+            "image": "public.ecr.aws/aws-observability/aws-otel-collector:latest",
+            "essential": true,
+            "command": [
+                "--config",
+                "/config/config.yaml"
+            ],
+            "dependsOn": [
+                {
+                    "containerName": "metadata-init",
+                    "condition": "SUCCESS"
+                },
+                {
+                    "containerName": "node-exporter",
+                    "condition": "START"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "config",
+                    "containerPath": "/config"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/daemon-adot-collector",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "otel",
+                    "awslogs-create-group": "true"
+                }
+            }
+        },
+        {
+            "name": "node-exporter",
+            "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/node-exporter:v1.11.1",
+            "essential": true,
+            "command": [
+                "--collector.disable-defaults",
+                "--collector.cpu",
+                "--collector.meminfo",
+                "--collector.diskstats",
+                "--collector.filesystem",
+                "--collector.netdev",
+                "--collector.loadavg",
+                "--path.sysfs=/host/sys",
+                "--web.listen-address=:9100",
+                "--collector.diskstats.device-include=nvme0n1|nvme1n1",
+                "--collector.filesystem.mount-points-include=^/host/(data|os)$",
+                "--collector.netdev.device-include=eth0"
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "proc",
+                    "containerPath": "/host/proc",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "sys",
+                    "containerPath": "/host/sys",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "data-volume",
+                    "containerPath": "/host/data",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "os-volume",
+                    "containerPath": "/host/os",
+                    "readOnly": true
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/daemon-adot-collector",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "node-exporter",
+                    "awslogs-create-group": "true"
+                }
+            }
+        },
+        {
+            "name": "metadata-init",
+            "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/mi-init:latest",
+            "essential": false,
+            "environment": [
+                {
+                    "name": "CONFIG_SOURCE",
+                    "value": "s3://<CONFIG_BUCKET_NAME>/adot-collector-config.yaml"
+                },
+                {
+                    "name": "AWS_REGION",
+                    "value": "<AWS_REGION>"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "config",
+                    "containerPath": "/config"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/daemon-adot-collector",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "metadata-init",
+                    "awslogs-create-group": "true"
+                }
+            }
+        }
+    ],
+    "volumes": [
+        {
+            "name": "config"
+        },
+        {
+            "name": "proc",
+            "host": {
+                "sourcePath": "/proc"
+            }
+        },
+        {
+            "name": "sys",
+            "host": {
+                "sourcePath": "/sys"
+            }
+        },
+        {
+            "name": "data-volume",
+            "host": {
+                "sourcePath": "/mnt/task"
+            }
+        },
+        {
+            "name": "os-volume",
+            "host": {
+                "sourcePath": "/local"
+            }
+        }
+    ],
+    "cpu": "512",
+    "memory": "512"
+}

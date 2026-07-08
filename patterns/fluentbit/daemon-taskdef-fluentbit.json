@@ -1,0 +1,93 @@
+{
+    "family": "daemon-fluentbit",
+    "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/EcsFluentBitTaskRole",
+    "containerDefinitions": [
+        {
+            "name": "fluent-bit",
+            "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:3",
+            "essential": true,
+            "command": [
+                "/fluent-bit/bin/fluent-bit",
+                "-c",
+                "/config/config.yaml"
+            ],
+            "dependsOn": [
+                {
+                    "containerName": "metadata-init",
+                    "condition": "SUCCESS"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "config",
+                    "containerPath": "/config"
+                },
+                {
+                    "sourceVolume": "host-logs",
+                    "containerPath": "/host/logs",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "fluentbit-state",
+                    "containerPath": "/var/lib/fluent-bit"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/daemon-fluentbit",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "fluent-bit",
+                    "awslogs-create-group": "true"
+                }
+            }
+        },
+        {
+            "name": "metadata-init",
+            "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/mi-init:latest",
+            "essential": false,
+            "environment": [
+                {
+                    "name": "CONFIG_SOURCE",
+                    "value": "s3://<CONFIG_BUCKET_NAME>/fluentbit-config.yaml"
+                },
+                {
+                    "name": "AWS_REGION",
+                    "value": "<AWS_REGION>"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "config",
+                    "containerPath": "/config"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/daemon-fluentbit",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "metadata-init",
+                    "awslogs-create-group": "true"
+                }
+            }
+        }
+    ],
+    "volumes": [
+        {
+            "name": "config"
+        },
+        {
+            "name": "host-logs",
+            "host": {
+                "sourcePath": "/var/log"
+            }
+        },
+        {
+            "name": "fluentbit-state"
+        }
+    ],
+    "cpu": "256",
+    "memory": "256"
+}
