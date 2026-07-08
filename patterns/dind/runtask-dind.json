@@ -1,0 +1,23 @@
+{
+    "taskDefinition": "dind",
+    "cluster": "<CLUSTER_NAME>",
+    "count": 1,
+    "capacityProviderStrategy": [
+        {
+            "capacityProvider": "<CAPACITY_PROVIDER_NAME>",
+            "weight": 1
+        }
+    ],
+    "enableExecuteCommand": true,
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": [
+                "<SUBNET_ID>"
+            ],
+            "securityGroups": [
+                "<SECURITY_GROUP_ID>"
+            ],
+            "assignPublicIp": "DISABLED"
+        }
+    }
+}

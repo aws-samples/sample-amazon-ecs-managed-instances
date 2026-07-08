@@ -1,0 +1,19 @@
+{
+    "cluster": "<CLUSTER_NAME>",
+    "serviceName": "mi-sheltie",
+    "taskDefinition": "mi-sheltie",
+    "desiredCount": 1,
+    "capacityProviderStrategy": [
+        {
+            "capacityProvider": "<CAPACITY_PROVIDER_NAME>",
+            "weight": 1
+        }
+    ],
+    "deploymentConfiguration": {
+        "minimumHealthyPercent": 50,
+        "maximumPercent": 200,
+        "strategy": "ROLLING"
+    },
+    "enableExecuteCommand": true,
+    "schedulingStrategy": "REPLICA"
+}

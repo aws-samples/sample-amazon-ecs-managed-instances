@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a new pattern, or an improvement to an existing one
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Note that [cfn-templates](../../cfn-templates) tracks a published blog post and only accepts breaking-change or security fixes — new capability requests are better suited to [patterns](../../patterns).
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Where should this change go?
+      options:
+        - cfn-templates (breaking change / security fix only)
+        - patterns (existing)
+        - patterns (new pattern)
+    validations:
+      required: true
+
+  - type: input
+    id: pattern-name
+    attributes:
+      label: Pattern name (if applicable)
+      description: If this is about an existing pattern, which subdirectory (e.g. `adot`, `dind`, `fluentbit`, `mi-init`, `sheltie`)? Leave blank if proposing a new one.
+    validations:
+      required: false
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or gap you've run into.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to see happen? Include example configuration if relevant.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or other approaches you've already tried.
+    validations:
+      required: false

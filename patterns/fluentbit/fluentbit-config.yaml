@@ -1,0 +1,63 @@
+service:
+  flush: 5
+  log_level: info
+  daemon: off
+  parsers_file: /fluent-bit/etc/parsers.conf
+
+pipeline:
+  inputs:
+    - name: tail
+      tag: ecs-agent
+      path: /host/logs/ecs/ecs-agent.log
+      parser: docker
+      read_from_head: false
+      refresh_interval: 10
+      rotate_wait: 30
+      skip_long_lines: true
+      db: /var/lib/fluent-bit/ecs-agent.db
+
+    - name: systemd
+      tag: containerd
+      path: /host/logs/journal
+      systemd_filter: _COMM=containerd
+      read_from_tail: true
+      strip_underscores: true
+      db: /var/lib/fluent-bit/containerd.db
+
+    - name: systemd
+      tag: kernel
+      path: /host/logs/journal
+      systemd_filter: _TRANSPORT=kernel
+      read_from_tail: false
+      strip_underscores: true
+      db: /var/lib/fluent-bit/kernel.db
+
+  filters:
+    - name: record_modifier
+      match: "*"
+      record:
+        - ClusterName __CLUSTER_NAME__
+        - ContainerInstanceId __CONTAINER_INSTANCE_ID__
+        - EC2InstanceId __EC2_INSTANCE_ID__
+
+  outputs:
+    - name: cloudwatch_logs
+      match: ecs-agent
+      region: <AWS_REGION>
+      log_group_name: /ecs/<CLUSTER_NAME>/host-logs
+      log_stream_name: ecs-agent/__CONTAINER_INSTANCE_ID__
+      auto_create_group: true
+
+    - name: cloudwatch_logs
+      match: containerd
+      region: <AWS_REGION>
+      log_group_name: /ecs/<CLUSTER_NAME>/host-logs
+      log_stream_name: containerd/__CONTAINER_INSTANCE_ID__
+      auto_create_group: true
+
+    - name: cloudwatch_logs
+      match: kernel
+      region: <AWS_REGION>
+      log_group_name: /ecs/<CLUSTER_NAME>/host-logs
+      log_stream_name: kernel/__CONTAINER_INSTANCE_ID__
+      auto_create_group: true

@@ -1,0 +1,93 @@
+{
+    "family": "dind",
+    "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/EcsDindTaskRole",
+    "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+        {
+            "name": "dind",
+            "image": "docker:dind",
+            "essential": true,
+            "command": [
+                "--host=unix:///socket/docker.sock"
+            ],
+            "privileged": true,
+            "mountPoints": [
+                {
+                    "sourceVolume": "dockersocket",
+                    "containerPath": "/socket"
+                }
+            ],
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "docker ps >/dev/null 2>&1"
+                ],
+                "interval": 10,
+                "retries": 3,
+                "startPeriod": 10,
+                "timeout": 5
+            },
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "true",
+                    "awslogs-group": "/ecs/dind",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "dind"
+                }
+            }
+        },
+        {
+            "name": "cli",
+            "image": "<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/docker:cli",
+            "essential": true,
+            "dependsOn": [
+                {
+                    "containerName": "dind",
+                    "condition": "HEALTHY"
+                }
+            ],
+            "command": [
+                "build",
+                "--file",
+                "Dockerfile",
+                "--push",
+                "--tag",
+                "<ECR_REPO_URI>:<IMAGE_TAG>",
+                "<GIT_URL>#:<CONTEXT_PATH>"
+            ],
+            "environment": [
+                {
+                    "name": "DOCKER_HOST",
+                    "value": "unix:///socket/docker.sock"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "dockersocket",
+                    "containerPath": "/socket"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "true",
+                    "awslogs-group": "/ecs/dind",
+                    "awslogs-region": "<AWS_REGION>",
+                    "awslogs-stream-prefix": "cli"
+                }
+            }
+        }
+    ],
+    "volumes": [
+        {
+            "name": "dockersocket"
+        }
+    ],
+    "requiresCompatibilities": [
+        "MANAGED_INSTANCES"
+    ],
+    "cpu": "1024",
+    "memory": "2048"
+}
